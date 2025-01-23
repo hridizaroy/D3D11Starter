@@ -24,6 +24,10 @@ private:
 	void LoadShaders();
 	void CreateGeometry();
 
+	// UI-related functions
+	void UpdateImGui(float deltaTime);
+	void BuildUI(float totalTime);
+
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
 	//     Component Object Model, which DirectX objects do
@@ -37,5 +41,13 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+
+	// ImGui UI related variables
+	size_t numSecs;
+	size_t fps;
+	bool demoWindowVisible;
+	float backgroundColor[4];
+	bool darkModeEnabled;
+
 };
 

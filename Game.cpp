@@ -11,6 +11,10 @@
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
 
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
+
 // For the DirectX Math library
 using namespace DirectX;
 
@@ -47,6 +51,31 @@ void Game::Initialize()
 		Graphics::Context->VSSetShader(vertexShader.Get(), 0, 0);
 		Graphics::Context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
+
+	// Initialize ImGui itself & platform/renderer backends
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui_ImplWin32_Init(Window::Handle());
+	ImGui_ImplDX11_Init(Graphics::Device.Get(), Graphics::Context.Get());
+	//ImGui::StyleColorsDark();
+
+	numSecs = 0;
+	fps = 0;
+	demoWindowVisible = true;
+	backgroundColor[0] = 0.4f;
+	backgroundColor[1] = 0.6f;
+	backgroundColor[2] = 0.75f;
+	backgroundColor[3] = 0.0f;
+	darkModeEnabled = true;
+
+	if (!darkModeEnabled)
+	{
+		ImGui::StyleColorsLight();
+	}
+	else
+	{
+		ImGui::StyleColorsDark();
+	}
 }
 
 
@@ -58,7 +87,10 @@ void Game::Initialize()
 // --------------------------------------------------------
 Game::~Game()
 {
-
+	// ImGui clean up
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }
 
 
@@ -240,9 +272,94 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	UpdateImGui(deltaTime);
+	BuildUI(totalTime);
+
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();
+}
+
+void Game::UpdateImGui(float deltaTime)
+{
+	// Feed fresh data to ImGui
+	ImGuiIO& io = ImGui::GetIO();
+	io.DeltaTime = deltaTime;
+	io.DisplaySize.x = (float)Window::Width();
+	io.DisplaySize.y = (float)Window::Height();
+	// Reset the frame
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+	// Determine new input capture
+	Input::SetKeyboardCapture(io.WantCaptureKeyboard);
+	Input::SetMouseCapture(io.WantCaptureMouse);
+	// Show the demo window conditionally
+	if (demoWindowVisible)
+	{
+		ImGui::ShowDemoWindow();
+	}
+}
+
+void Game::BuildUI(float totalTime)
+{
+	ImGui::Begin("Random features");
+
+	if (!darkModeEnabled)
+	{
+		ImGui::StyleColorsLight();
+	}
+	else
+	{
+		ImGui::StyleColorsDark();
+	}
+	
+	ImGui::Text("Info:");
+
+	// Update FPS every second
+	size_t newNumSecs = (size_t)totalTime;
+	if (newNumSecs > numSecs)
+	{
+		fps = (size_t)ImGui::GetIO().Framerate;
+		numSecs = newNumSecs;
+	}
+
+	ImGui::Text("Framerate: %d fps", fps);
+
+	// Window Dimensions
+	ImGui::Text("Window Dimensions: %dx%d", Window::Width(), Window::Height());
+
+	// Toggle button for demo window
+	if (ImGui::Button("Toggle demo window visibility"))
+	{
+		demoWindowVisible = !demoWindowVisible;
+	}
+
+	// Color picker for changing background color
+	ImGui::ColorEdit4("RGBA color editor", backgroundColor);
+
+	// Checkbox for dark mode
+	ImGui::Checkbox("Dark mode", &darkModeEnabled);
+
+	// Random features
+	float value = 0.1f;
+	ImGui::SliderFloat("How functional is this slider?", &value, -5.0f, 5.0f);
+	if (ImGui::CollapsingHeader("Random textboxes"))
+	{
+		ImGui::Text("Here's a random textbox");
+		ImGui::Text("Here's another random textbox");
+	}
+	if (ImGui::Button("Expand window"))
+	{
+		ImGui::SetWindowSize(ImVec2(1280, 720));
+	}
+	if (ImGui::Button("Shrink window"))
+	{
+		ImGui::SetWindowSize(ImVec2(400, 600));
+	}
+	ImGui::TextColored(ImVec4(0.1f, 0.5f, 0.9f, 1.0f), "Colorful text");
+
+	ImGui::End();
 }
 
 
@@ -256,8 +373,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - At the beginning of Game::Draw() before drawing *anything*
 	{
 		// Clear the back buffer (erase what's on screen) and depth buffer
-		const float color[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
-		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	color);
+		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backgroundColor);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
@@ -286,6 +402,9 @@ void Game::Draw(float deltaTime, float totalTime)
 			0,     // Offset to the first index we want to use
 			0);    // Offset to add to each index when looking up vertices
 	}
+
+	ImGui::Render(); // Turns this frame’s UI into renderable triangles
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Draws it to the screen
 
 	// Frame END
 	// - These should happen exactly ONCE PER FRAME
