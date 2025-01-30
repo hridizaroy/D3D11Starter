@@ -3,6 +3,10 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
+#include "Mesh.h"
+#include <memory>
+#include <vector>
+
 class Game
 {
 public:
@@ -28,15 +32,6 @@ private:
 	void UpdateImGui(float deltaTime);
 	void BuildUI(float totalTime);
 
-	// Note the usage of ComPtr below
-	//  - This is a smart pointer for objects that abide by the
-	//     Component Object Model, which DirectX objects do
-	//  - More info here: https://github.com/Microsoft/DirectXTK/wiki/ComPtr
-
-	// Buffers to hold actual geometry data
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
-
 	// Shaders and shader-related constructs
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
@@ -48,6 +43,9 @@ private:
 	bool demoWindowVisible;
 	float backgroundColor[4];
 	bool darkModeEnabled;
+
+	// Scene
+	std::vector<std::shared_ptr<Mesh>> scene;
 
 };
 
