@@ -52,12 +52,13 @@ void Game::Initialize()
 		Graphics::Context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
 
+	CreateConstantBuffer();
+
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init(Window::Handle());
 	ImGui_ImplDX11_Init(Graphics::Device.Get(), Graphics::Context.Get());
-	//ImGui::StyleColorsDark();
 
 	numSecs = 0;
 	fps = 0;
@@ -67,6 +68,10 @@ void Game::Initialize()
 	backgroundColor[2] = 0.75f;
 	backgroundColor[3] = 0.0f;
 	darkModeEnabled = true;
+
+	// Initial constant buffer data values
+	vertexShaderData.colorTint = XMFLOAT4(1.0f, 0.1f, 0.50f, 1.0f);
+	vertexShaderData.offset = XMFLOAT3(-0.3f, 0.2f, 0.0f);
 
 	if (!darkModeEnabled)
 	{
@@ -229,6 +234,30 @@ void Game::CreateGeometry()
 	scene.push_back(pentagon);
 }
 
+// --------------------------------------------------------
+// Creates a constant buffer for our vertex shader
+// --------------------------------------------------------
+void Game::CreateConstantBuffer()
+{
+	unsigned int size = sizeof(VertexShaderData);
+	size = (size + 15) / 16 * 16;
+
+	// Describe the constant buffer
+	D3D11_BUFFER_DESC cbDesc = {};
+	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbDesc.ByteWidth = size;
+	cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+
+	Graphics::Device->CreateBuffer(&cbDesc, 0, constantBuffer.GetAddressOf());
+
+	Graphics::Context->VSSetConstantBuffers(
+		0,
+		1,
+		constantBuffer.GetAddressOf()
+	);
+}
+
 
 // --------------------------------------------------------
 // Handle resizing to match the new window size
@@ -329,6 +358,10 @@ void Game::BuildUI(float totalTime)
 		}
 	}
 
+	ImGui::Text("Constant buffer vars");
+	ImGui::DragFloat3("Offset", &vertexShaderData.offset.x, 0.01f, -1.0f, 1.0f);
+	ImGui::ColorEdit4("Color", &vertexShaderData.colorTint.x);
+
 	ImGui::End();
 }
 
@@ -346,6 +379,12 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backgroundColor);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
+
+	// Update constant buffer data
+	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+	Graphics::Context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+	memcpy(mappedBuffer.pData, &vertexShaderData, sizeof(vertexShaderData));
+	Graphics::Context->Unmap(constantBuffer.Get(), 0);
 
 	// DRAW geometry
 	{

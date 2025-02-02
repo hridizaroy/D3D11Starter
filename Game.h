@@ -7,6 +7,8 @@
 #include <memory>
 #include <vector>
 
+#include "BufferStructs.h"
+
 class Game
 {
 public:
@@ -23,10 +25,10 @@ public:
 	void OnResize();
 
 private:
-
 	// Initialization helper methods - feel free to customize, combine, remove, etc.
 	void LoadShaders();
 	void CreateGeometry();
+	void CreateConstantBuffer();
 
 	// UI-related functions
 	void UpdateImGui(float deltaTime);
@@ -36,6 +38,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
+	
+	VertexShaderData vertexShaderData;
+
 
 	// ImGui UI related variables
 	size_t numSecs;
