@@ -69,10 +69,6 @@ void Game::Initialize()
 	backgroundColor[3] = 0.0f;
 	darkModeEnabled = true;
 
-	// Initial constant buffer data values
-	vertexShaderData.colorTint = XMFLOAT4(1.0f, 0.1f, 0.50f, 1.0f);
-	vertexShaderData.offset = XMFLOAT3(-0.3f, 0.2f, 0.0f);
-
 	if (!darkModeEnabled)
 	{
 		ImGui::StyleColorsLight();
@@ -228,10 +224,15 @@ void Game::CreateGeometry()
 	std::shared_ptr<Mesh> pentagon = std::make_shared<Mesh>(pentagonVertices, 5,
 		pentagonIndices, 9, "Pentagon");
 
-	// Add to scene
-	scene.push_back(quad);
-	scene.push_back(hexagon);
-	scene.push_back(pentagon);
+	meshes[0] = quad;
+	meshes[1] = pentagon;
+	meshes[2] = hexagon;
+
+	scene[0] = std::make_shared<Entity>(quad);
+	scene[1] = std::make_shared<Entity>(quad);
+	scene[2] = std::make_shared<Entity>(quad);
+	scene[3] = std::make_shared<Entity>(hexagon);
+	scene[4] = std::make_shared<Entity>(pentagon);
 }
 
 // --------------------------------------------------------
@@ -275,6 +276,14 @@ void Game::Update(float deltaTime, float totalTime)
 {
 	UpdateImGui(deltaTime);
 	BuildUI(totalTime);
+
+	scene[0]->GetTransform()->SetScale((DirectX::XMScalarSin(deltaTime) / 2.0f + 6.0f), 0.5f, 0.5f);
+	scene[0]->GetTransform()->Rotate(0.0f, 0.0f, DirectX::XMScalarSin(deltaTime));
+	scene[1]->GetTransform()->SetPosition(0.5f, totalTime * 0.05f, 0.0f);
+	scene[1]->GetTransform()->SetScale(0.5f, 0.5f, 0.5f);
+	scene[2]->GetTransform()->MoveAbsolute(DirectX::XMScalarSin(deltaTime) * 0.05f, 0.2f * deltaTime, 0.0f);
+	scene[3]->GetTransform()->MoveAbsolute(0.01f * deltaTime, 0.0f, 0.0f);
+	scene[4]->GetTransform()->Rotate(0.0f, 0.0f, DirectX::XMScalarSin(deltaTime));
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
@@ -345,7 +354,7 @@ void Game::BuildUI(float totalTime)
 	// Mesh info
 	if (ImGui::CollapsingHeader("Meshes"))
 	{
-		for (const std::shared_ptr<Mesh>& mesh : scene)
+		for (const std::shared_ptr<Mesh>& mesh : meshes)
 		{
 			if (ImGui::CollapsingHeader(("Mesh: " + mesh->GetMeshName()).c_str()))
 			{
@@ -358,9 +367,27 @@ void Game::BuildUI(float totalTime)
 		}
 	}
 
-	ImGui::Text("Constant buffer vars");
-	ImGui::DragFloat3("Offset", &vertexShaderData.offset.x, 0.01f, -1.0f, 1.0f);
-	ImGui::ColorEdit4("Color", &vertexShaderData.colorTint.x);
+	// Entity Info
+	if (ImGui::CollapsingHeader("Scene Entities"))
+	{
+		uint32_t idx = 0;
+		for (const std::shared_ptr<Entity>& entity : scene)
+		{
+			std::string header = "Entity " + std::to_string(idx);
+			std::string posHeader = "Position##pos" + std::to_string(idx);
+			std::string rotHeader = "Rotation (radians)##rot" + std::to_string(idx);
+			std::string scaleHeader = "Scale##scale" + std::to_string(idx);
+
+			if (ImGui::CollapsingHeader(header.c_str()))
+			{
+				ImGui::DragFloat3(posHeader.c_str(), &entity->GetTransform()->m_position.x);
+				ImGui::DragFloat3(rotHeader.c_str(), &entity->GetTransform()->m_rotation.x);
+				ImGui::DragFloat3(scaleHeader.c_str(), & entity->GetTransform()->m_scale.x);
+			}
+
+			idx++;
+		}
+	}
 
 	ImGui::End();
 }
@@ -380,17 +407,11 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	// Update constant buffer data
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-	Graphics::Context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-	memcpy(mappedBuffer.pData, &vertexShaderData, sizeof(vertexShaderData));
-	Graphics::Context->Unmap(constantBuffer.Get(), 0);
-
 	// DRAW geometry
 	{
-		for (const std::shared_ptr<Mesh>& mesh : scene)
+		for (const std::shared_ptr<Entity>& entity : scene)
 		{
-			mesh->Draw();
+			entity->Draw(constantBuffer);
 		}
 	}
 

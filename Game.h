@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "BufferStructs.h"
+#include "Entity.h"
 
 class Game
 {
@@ -39,9 +40,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
-	
-	VertexShaderData vertexShaderData;
-
 
 	// ImGui UI related variables
 	size_t numSecs;
@@ -51,7 +49,8 @@ private:
 	bool darkModeEnabled;
 
 	// Scene
-	std::vector<std::shared_ptr<Mesh>> scene;
+	std::shared_ptr<Mesh> meshes[3];
+	std::shared_ptr<Entity> scene[5];
 
 };
 
