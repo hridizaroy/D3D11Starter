@@ -54,6 +54,18 @@ void Game::Initialize()
 
 	CreateConstantBuffer();
 
+	// create cameras;
+	cameras.reserve(3);
+	cameras.push_back(std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(-0.5f, 0.0f, -3.0f)));
+	cameras.push_back(std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(0.5f, -0.3f, -5.0f)));
+	cameras.push_back(std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(0.8f, 0.4f, -0.5f)));
+
+	cameras[1]->SetFOV(XM_PIDIV2); // 90 degrees
+	cameras[2]->SetFOV(XM_PI / 3.0f); // 60 degrees
+
+	activeCameraIdx = 0;
+
+
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -266,6 +278,13 @@ void Game::CreateConstantBuffer()
 // --------------------------------------------------------
 void Game::OnResize()
 {
+	for (const auto& camera : cameras)
+	{
+		if (camera)
+		{
+			camera->UpdateProjectionMatrix(Window::AspectRatio());
+		}
+	}
 }
 
 
@@ -284,6 +303,8 @@ void Game::Update(float deltaTime, float totalTime)
 	scene[2]->GetTransform()->MoveAbsolute(DirectX::XMScalarSin(deltaTime) * 0.05f, 0.2f * deltaTime, 0.0f);
 	scene[3]->GetTransform()->MoveAbsolute(0.01f * deltaTime, 0.0f, 0.0f);
 	scene[4]->GetTransform()->Rotate(0.0f, 0.0f, DirectX::XMScalarSin(deltaTime));
+
+	cameras[activeCameraIdx]->Update(deltaTime);
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
@@ -351,6 +372,40 @@ void Game::BuildUI(float totalTime)
 	// Checkbox for dark mode
 	ImGui::Checkbox("Dark mode", &darkModeEnabled);
 
+	// Camera switch
+	std::vector<std::string> cameraOptions;
+	size_t numCameras = cameras.size();
+	cameraOptions.reserve(numCameras);
+	for (size_t ii = 0; ii < numCameras; ii++)
+	{
+		cameraOptions.push_back("Camera " + std::to_string(ii + 1));
+	}
+	std::vector<const char*> cameraOptionPtrs;
+	cameraOptionPtrs.reserve(numCameras);
+
+	for (size_t ii = 0; ii < numCameras; ii++)
+	{
+		cameraOptionPtrs.push_back(cameraOptions[ii].c_str());
+	}
+
+	ImGui::Combo("Select Camera", &activeCameraIdx, cameraOptionPtrs.data(), static_cast<int>(numCameras));
+
+	// Active camera info
+	if (ImGui::CollapsingHeader("Camera Data"))
+	{
+		std::shared_ptr<Camera>& activeCamera = cameras[activeCameraIdx];
+
+		ImGui::Text("Position: %f, %f, %f",
+			activeCamera->m_transform->m_position.x,
+			activeCamera->m_transform->m_position.y, 
+			activeCamera->m_transform->m_position.z);
+		ImGui::Text("Field of view: %f", activeCamera->m_fov);
+		ImGui::Text("Rotation: %f, %f, %f",
+			activeCamera->m_transform->m_rotation.x,
+			activeCamera->m_transform->m_rotation.y,
+			activeCamera->m_transform->m_rotation.z);
+	}
+
 	// Mesh info
 	if (ImGui::CollapsingHeader("Meshes"))
 	{
@@ -411,7 +466,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	{
 		for (const std::shared_ptr<Entity>& entity : scene)
 		{
-			entity->Draw(constantBuffer);
+			entity->Draw(constantBuffer, cameras[activeCameraIdx]);
 		}
 	}
 

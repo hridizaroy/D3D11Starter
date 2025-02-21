@@ -9,6 +9,7 @@
 
 #include "BufferStructs.h"
 #include "Entity.h"
+#include "Camera.h"
 
 class Game
 {
@@ -51,6 +52,9 @@ private:
 	// Scene
 	std::shared_ptr<Mesh> meshes[3];
 	std::shared_ptr<Entity> scene[5];
+	std::vector<std::shared_ptr<Camera>> cameras;
+
+	int activeCameraIdx;
 
 };
 

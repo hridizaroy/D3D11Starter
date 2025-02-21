@@ -9,12 +9,15 @@ Entity::Entity(const std::shared_ptr<Mesh>& mesh) :
 	m_transform = std::make_shared<Transform>();
 }
 
-void Entity::Draw(const Microsoft::WRL::ComPtr<ID3D11Buffer>& constantBuffer)
+void Entity::Draw(const Microsoft::WRL::ComPtr<ID3D11Buffer>& constantBuffer,
+	const std::shared_ptr<Camera>& camera)
 {
 
 	VertexShaderData vertexShaderData{};
 	vertexShaderData.world = m_transform->GetWorldMatrix();
 	vertexShaderData.colorTint = m_colorTint;
+	vertexShaderData.view = camera->GetViewMatrix();
+	vertexShaderData.projection = camera->GetProjectionMatrix();
 
 	// Update constant buffer data
 	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
