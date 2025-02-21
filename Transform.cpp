@@ -151,17 +151,18 @@ XMFLOAT3 Transform::GetPitchYawRoll() const
 void Transform::MoveAbsolute(float x, float y, float z)
 {
 	XMVECTOR moveVector = XMVectorSet(x, y, z, 1.0f);
-	MoveAbsolute(moveVector);
+	
+	XMVECTOR currPos = XMLoadFloat3(&m_position);
+	currPos += moveVector;
+
+	XMStoreFloat3(&m_position, currPos);
+	m_isDirty = true;
 }
 
 void Transform::MoveAbsolute(const XMFLOAT3& offset)
 {
 	XMVECTOR moveVector = XMLoadFloat3(&offset);
-	MoveAbsolute(moveVector);
-}
-
-void Transform::MoveAbsolute(const XMVECTOR& moveVector)
-{
+	
 	XMVECTOR currPos = XMLoadFloat3(&m_position);
 	currPos += moveVector;
 
@@ -172,17 +173,20 @@ void Transform::MoveAbsolute(const XMVECTOR& moveVector)
 void Transform::MoveRelative(float x, float y, float z)
 {
 	XMVECTOR moveVector = XMVectorSet(x, y, z, 1.0f);
-	MoveRelative(moveVector);
+	
+	XMVECTOR rotateQuat = XMQuaternionRotationRollPitchYaw(m_rotation.x, m_rotation.y, m_rotation.z);
+
+	XMVECTOR currPos = XMLoadFloat3(&m_position);
+	currPos += XMVector3Rotate(moveVector, rotateQuat);
+
+	XMStoreFloat3(&m_position, currPos);
+	m_isDirty = true;
 }
 
 void Transform::MoveRelative(const XMFLOAT3& offset)
 {
 	XMVECTOR moveVector = XMLoadFloat3(&offset);
-	MoveRelative(moveVector);
-}
-
-void Transform::MoveRelative(const XMVECTOR& moveVector)
-{
+	
 	XMVECTOR rotateQuat = XMQuaternionRotationRollPitchYaw(m_rotation.x, m_rotation.y, m_rotation.z);
 
 	XMVECTOR currPos = XMLoadFloat3(&m_position);
@@ -195,17 +199,19 @@ void Transform::MoveRelative(const XMVECTOR& moveVector)
 void Transform::Rotate(float pitch, float yaw, float roll)
 {
 	XMVECTOR rotateValue = XMVectorSet(pitch, yaw, roll, 0.0f);
-	Rotate(rotateValue);
+	
+	XMVECTOR currRotation = XMLoadFloat3(&m_rotation);
+	currRotation += rotateValue;
+
+	XMStoreFloat3(&m_rotation, currRotation);
+	m_isDirty = true;
+	m_isRotationDirty = true;
 }
 
 void Transform::Rotate(const XMFLOAT3& rotation)
 {
 	XMVECTOR rotateValue = XMLoadFloat3(&rotation);
-	Rotate(rotateValue);
-}
-
-void Transform::Rotate(const XMVECTOR& rotateValue)
-{
+	
 	XMVECTOR currRotation = XMLoadFloat3(&m_rotation);
 	currRotation += rotateValue;
 

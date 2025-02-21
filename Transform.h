@@ -58,7 +58,4 @@ private:
 
 	void UpdateWorldMatrix();
 	void UpdateLocalVectors();
-	void MoveAbsolute(const DirectX::XMVECTOR& moveVector);
-	void MoveRelative(const DirectX::XMVECTOR& moveVector);
-	void Rotate(const DirectX::XMVECTOR& moveVector);
 };

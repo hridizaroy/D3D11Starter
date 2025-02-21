@@ -110,16 +110,17 @@ void Camera::Update(const float dt)
 		float rotateY = Input::GetMouseXDelta() * m_mouseLookSpeed;
 		float rotateX = Input::GetMouseYDelta() * m_mouseLookSpeed;
 
-		//float currRotateX = m_transform->GetPitchYawRoll().x;
+		float currRotateX = m_transform->GetPitchYawRoll().x;
 
-		//XMVECTOR finalRotateX = XMLoadFloat(&rotateX);
+		// clamp X rotation between -pi/2 and pi/2
+		XMVECTOR finalRotateX = XMLoadFloat(&rotateX);
 
-		//float min = -XM_PIDIV2 - currRotateX;
-		//float max = XM_PIDIV2 - currRotateX;
-		//finalRotateX = XMVectorClamp(finalRotateX, XMLoadFloat(&min), XMLoadFloat(&max));
+		float min = -XM_PIDIV2 - currRotateX;
+		float max = XM_PIDIV2 - currRotateX;
+		finalRotateX = XMVectorClamp(finalRotateX, XMLoadFloat(&min), XMLoadFloat(&max));
 
-		//XMStoreFloat(&rotateX, finalRotateX);
-		//
+		XMStoreFloat(&rotateX, finalRotateX);
+		
 		m_transform->Rotate(rotateX, rotateY, 0.0f);
 	}
 
