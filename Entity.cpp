@@ -1,29 +1,27 @@
 #include "Entity.h"
 #include "Graphics.h"
-#include "BufferStructs.h"
 
-Entity::Entity(const std::shared_ptr<Mesh>& mesh) : 
+Entity::Entity(const std::shared_ptr<Mesh>& mesh,
+	const std::shared_ptr<Material>& material) :
 	m_colorTint(1.0f, 1.0f, 1.0f, 1.0f)
 {
 	m_mesh = mesh;
 	m_transform = std::make_shared<Transform>();
+	m_material = material;
 }
 
-void Entity::Draw(const Microsoft::WRL::ComPtr<ID3D11Buffer>& constantBuffer,
-	const std::shared_ptr<Camera>& camera)
+void Entity::Draw(const std::shared_ptr<Camera>& camera)
 {
+	std::shared_ptr<SimpleVertexShader> vs = m_material->GetVertexShader();
+	vs->SetFloat4("colorTint",m_material->GetColorTint());
+	vs->SetMatrix4x4("world", m_transform->GetWorldMatrix());
+	vs->SetMatrix4x4("view", camera->GetViewMatrix());
+	vs->SetMatrix4x4("projection", camera->GetProjectionMatrix());
 
-	VertexShaderData vertexShaderData{};
-	vertexShaderData.world = m_transform->GetWorldMatrix();
-	vertexShaderData.colorTint = m_colorTint;
-	vertexShaderData.view = camera->GetViewMatrix();
-	vertexShaderData.projection = camera->GetProjectionMatrix();
+	vs->CopyAllBufferData();
 
-	// Update constant buffer data
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-	Graphics::Context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-	memcpy(mappedBuffer.pData, &vertexShaderData, sizeof(vertexShaderData));
-	Graphics::Context->Unmap(constantBuffer.Get(), 0);
+	vs->SetShader();
+	m_material->GetPixelShader()->SetShader();
 
 	m_mesh->Draw();
 }
@@ -36,4 +34,9 @@ std::shared_ptr<Mesh> Entity::GetMesh() const
 std::shared_ptr<Transform> Entity::GetTransform() const
 {
 	return m_transform;
+}
+
+std::shared_ptr<Material> Entity::GetMaterial() const
+{
+	return m_material;
 }
