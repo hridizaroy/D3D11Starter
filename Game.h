@@ -42,7 +42,7 @@ private:
 
 	// Scene
 	std::shared_ptr<Mesh> meshes[5];
-	std::shared_ptr<Entity> scene[5];
+	std::shared_ptr<Entity> scene[15];
 	std::vector<std::shared_ptr<Camera>> cameras;
 
 	int activeCameraIdx;
