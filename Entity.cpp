@@ -13,15 +13,18 @@ Entity::Entity(const std::shared_ptr<Mesh>& mesh,
 void Entity::Draw(const std::shared_ptr<Camera>& camera)
 {
 	std::shared_ptr<SimpleVertexShader> vs = m_material->GetVertexShader();
-	vs->SetFloat4("colorTint",m_material->GetColorTint());
+	std::shared_ptr<SimplePixelShader> ps = m_material->GetPixelShader();
+
 	vs->SetMatrix4x4("world", m_transform->GetWorldMatrix());
 	vs->SetMatrix4x4("view", camera->GetViewMatrix());
 	vs->SetMatrix4x4("projection", camera->GetProjectionMatrix());
+	ps->SetFloat4("colorTint", m_material->GetColorTint());
 
 	vs->CopyAllBufferData();
+	ps->CopyAllBufferData();
 
 	vs->SetShader();
-	m_material->GetPixelShader()->SetShader();
+	ps->SetShader();
 
 	m_mesh->Draw();
 }

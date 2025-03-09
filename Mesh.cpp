@@ -213,7 +213,7 @@ Mesh::Mesh(const char* objFile, std::string meshName)
 
 	// End Mesh Loader code
 	
-	Initialize(&verts[0], verts.size(), &indices[0], indices.size(), meshName);
+	Initialize(&verts[0], static_cast<unsigned int>(verts.size()), &indices[0], static_cast<unsigned int>(indices.size()), meshName);
 }
 
 Mesh::~Mesh()

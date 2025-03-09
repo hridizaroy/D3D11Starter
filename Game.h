@@ -41,7 +41,7 @@ private:
 	bool darkModeEnabled;
 
 	// Scene
-	std::shared_ptr<Mesh> meshes[3];
+	std::shared_ptr<Mesh> meshes[5];
 	std::shared_ptr<Entity> scene[5];
 	std::vector<std::shared_ptr<Camera>> cameras;
 

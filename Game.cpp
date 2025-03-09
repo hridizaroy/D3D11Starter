@@ -107,19 +107,21 @@ void Game::CreateEntities()
 	std::shared_ptr<SimplePixelShader> ps = std::make_shared<SimplePixelShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"PixelShader.cso").c_str());
 
-	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT4(1.0, 0.5, 0.5, 1.0), vs, ps);
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT4(0.3, 0.5, 0.9, 1.0), vs, ps);
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT4(0.5, 0.1, 0.5, 1.0), vs, ps);
+	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), vs, ps);
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT4(0.3f, 0.5f, 0.9f, 1.0f), vs, ps);
+	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT4(0.5f, 0.1f, 0.5f, 1.0f), vs, ps);
 
 	meshes[0] = std::make_shared<Mesh>(FixPath("../../Assets/Models/sphere.obj").c_str(), "Sphere");
-	meshes[1] = std::make_shared<Mesh>(FixPath("../../Assets/Models/helix.obj").c_str(), "Helix");
-	meshes[2] = std::make_shared<Mesh>(FixPath("../../Assets/Models/cylinder.obj").c_str(), "Cylinder");
+	meshes[1] = std::make_shared<Mesh>(FixPath("../../Assets/Models/cube.obj").c_str(), "Cube");
+	meshes[2] = std::make_shared<Mesh>(FixPath("../../Assets/Models/torus.obj").c_str(), "Torus");
+	meshes[3] = std::make_shared<Mesh>(FixPath("../../Assets/Models/helix.obj").c_str(), "Helix");
+	meshes[4] = std::make_shared<Mesh>(FixPath("../../Assets/Models/cylinder.obj").c_str(), "Cylinder");
 
 	scene[0] = std::make_shared<Entity>(meshes[0], mat1);
-	scene[1] = std::make_shared<Entity>(meshes[0], mat2);
-	scene[2] = std::make_shared<Entity>(meshes[0], mat3);
-	scene[3] = std::make_shared<Entity>(meshes[1], mat1);
-	scene[4] = std::make_shared<Entity>(meshes[2], mat2);
+	scene[1] = std::make_shared<Entity>(meshes[1], mat2);
+	scene[2] = std::make_shared<Entity>(meshes[2], mat3);
+	scene[3] = std::make_shared<Entity>(meshes[3], mat1);
+	scene[4] = std::make_shared<Entity>(meshes[4], mat2);
 }
 
 
@@ -147,13 +149,20 @@ void Game::Update(float deltaTime, float totalTime)
 	UpdateImGui(deltaTime);
 	BuildUI(totalTime);
 
-	scene[0]->GetTransform()->SetScale((DirectX::XMScalarSin(deltaTime) / 2.0f + 6.0f), 0.5f, 0.5f);
-	scene[0]->GetTransform()->Rotate(0.0f, 0.0f, DirectX::XMScalarSin(deltaTime));
-	scene[1]->GetTransform()->SetPosition(0.5f, totalTime * 0.05f, 0.0f);
-	scene[1]->GetTransform()->SetScale(0.5f, 0.5f, 0.5f);
-	scene[2]->GetTransform()->MoveAbsolute(DirectX::XMScalarSin(deltaTime) * 0.05f, 0.2f * deltaTime, 0.0f);
-	scene[3]->GetTransform()->MoveAbsolute(0.01f * deltaTime, 0.0f, 0.0f);
-	scene[4]->GetTransform()->Rotate(0.0f, 0.0f, DirectX::XMScalarSin(deltaTime));
+	scene[0]->GetTransform()->SetPosition(-2.0f, 0.0f, 0.0f);
+	scene[0]->GetTransform()->SetScale(0.3f, 0.3f, 0.3f);
+
+	scene[1]->GetTransform()->SetPosition(-1.0f, 0.0f, 0.0f);
+	scene[1]->GetTransform()->SetScale(0.3f, 0.3f, 0.3f);
+
+	scene[2]->GetTransform()->SetPosition(-0.3f, 0.0f, 0.0f);
+	scene[2]->GetTransform()->SetScale(0.3f, 0.3f, 0.3f);
+
+	scene[3]->GetTransform()->SetPosition(0.5f, 0.0f, 0.0f);
+	scene[3]->GetTransform()->SetScale(0.3f, 0.3f, 0.3f);
+
+	scene[4]->GetTransform()->SetPosition(1.3f, 0.0f, 0.0f);
+	scene[4]->GetTransform()->SetScale(0.3f, 0.3f, 0.3f);
 
 	cameras[activeCameraIdx]->Update(deltaTime);
 
