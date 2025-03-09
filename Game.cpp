@@ -111,68 +111,15 @@ void Game::CreateEntities()
 	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT4(0.3, 0.5, 0.9, 1.0), vs, ps);
 	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT4(0.5, 0.1, 0.5, 1.0), vs, ps);
 
-	// Colors
-	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	XMFLOAT4 yellow = XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f);
-	XMFLOAT4 magenta = XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f);
-	XMFLOAT4 cyan = XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 black = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	meshes[0] = std::make_shared<Mesh>(FixPath("../../Assets/Models/sphere.obj").c_str(), "Sphere");
+	meshes[1] = std::make_shared<Mesh>(FixPath("../../Assets/Models/helix.obj").c_str(), "Helix");
+	meshes[2] = std::make_shared<Mesh>(FixPath("../../Assets/Models/cylinder.obj").c_str(), "Cylinder");
 
-	// Mesh data
-	Vertex quadVertices[] =
-	{
-		{ XMFLOAT3(+0.0f, +0.5f, +0.0f), red },
-		{ XMFLOAT3(+0.5f, -0.5f, +0.0f), blue },
-		{ XMFLOAT3(-0.5f, -0.5f, +0.0f), green },
-		{ XMFLOAT3(+0.6f, +0.5f, +0.0f), white }
-	};
-
-	unsigned int quadIndices[] = { 0, 1, 2, 0, 3, 1 };
-
-	Vertex hexagonVertices[] =
-	{
-		{ XMFLOAT3(+0.8f, +0.9f, +0.0f), red },
-		{ XMFLOAT3(+0.9f, -0.5f, +0.0f), blue },
-		{ XMFLOAT3(+0.75f, -0.7f, +0.0f), green },
-		{ XMFLOAT3(+0.6f, -0.65f, +0.0f), white },
-		{ XMFLOAT3(+0.55f, -0.6f, +0.0f), yellow },
-		{ XMFLOAT3(+0.7f, +0.85f, +0.0f), magenta }
-	};
-
-	unsigned int hexagonIndices[] = {0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5};
-
-	Vertex pentagonVertices[] =
-	{
-		{ XMFLOAT3(-0.55f, -0.6f, +0.0f), yellow },
-		{ XMFLOAT3(-0.6f, -0.65f, +0.0f), white },
-		{ XMFLOAT3(-0.75f, -0.7f, +0.0f), magenta },
-		{ XMFLOAT3(-0.9f, -0.5f, +0.0f), cyan },
-		{ XMFLOAT3(-0.8f, +0.9f, +0.0f), black }		
-	};
-
-	unsigned int pentagonIndices[] = { 0, 1, 2, 0, 2, 3, 0, 3, 4 };
-
-	std::shared_ptr<Mesh> quad = std::make_shared<Mesh>(quadVertices, 4,
-									quadIndices, 6, "Quad");
-
-	std::shared_ptr<Mesh> hexagon = std::make_shared<Mesh>(hexagonVertices, 6,
-		hexagonIndices, 12, "Hexagon");
-
-	std::shared_ptr<Mesh> pentagon = std::make_shared<Mesh>(pentagonVertices, 5,
-		pentagonIndices, 9, "Pentagon");
-
-	meshes[0] = quad;
-	meshes[1] = pentagon;
-	meshes[2] = hexagon;
-
-	scene[0] = std::make_shared<Entity>(quad, mat1);
-	scene[1] = std::make_shared<Entity>(quad, mat2);
-	scene[2] = std::make_shared<Entity>(quad, mat3);
-	scene[3] = std::make_shared<Entity>(hexagon, mat1);
-	scene[4] = std::make_shared<Entity>(pentagon, mat2);
+	scene[0] = std::make_shared<Entity>(meshes[0], mat1);
+	scene[1] = std::make_shared<Entity>(meshes[0], mat2);
+	scene[2] = std::make_shared<Entity>(meshes[0], mat3);
+	scene[3] = std::make_shared<Entity>(meshes[1], mat1);
+	scene[4] = std::make_shared<Entity>(meshes[2], mat2);
 }
 
 

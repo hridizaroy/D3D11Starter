@@ -10,7 +10,8 @@ class Mesh
 {
 public:
 	Mesh(Vertex* vertices, unsigned int numVertices,
-		unsigned int* indices, unsigned int numIndices, std::string name);
+		unsigned int* indices, unsigned int numIndices, std::string meshName);
+	Mesh(const char* objFile, std::string meshName);
 	~Mesh();
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetVertexBuffer() const;
@@ -31,4 +32,7 @@ private:
 	unsigned int m_vertexCount;
 
 	std::string m_name;
+
+	void Initialize(Vertex* vertices, unsigned int numVertices,
+		unsigned int* indices, unsigned int numIndices, std::string name);
 };
