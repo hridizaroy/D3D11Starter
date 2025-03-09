@@ -97,19 +97,28 @@ Game::~Game()
 
 
 // --------------------------------------------------------
-// Creates the geometry we're going to draw
+// Creates the entities we're going to draw
 // --------------------------------------------------------
 void Game::CreateEntities()
 {
 	// Load shaders
 	std::shared_ptr<SimpleVertexShader> vs = std::make_shared<SimpleVertexShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"VertexShader.cso").c_str());
+
+	// Pixel shaders
 	std::shared_ptr<SimplePixelShader> ps = std::make_shared<SimplePixelShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"PixelShader.cso").c_str());
+	std::shared_ptr<SimplePixelShader> ps_uvs = std::make_shared<SimplePixelShader>(
+		Graphics::Device, Graphics::Context, FixPath(L"DebugUVsPS.cso").c_str());
+	std::shared_ptr<SimplePixelShader> ps_normals = std::make_shared<SimplePixelShader>(
+		Graphics::Device, Graphics::Context, FixPath(L"DebugNormalsPS.cso").c_str());
+	std::shared_ptr<SimplePixelShader> ps_custom = std::make_shared<SimplePixelShader>(
+		Graphics::Device, Graphics::Context, FixPath(L"CustomPS.cso").c_str());
 
 	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), vs, ps);
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT4(0.3f, 0.5f, 0.9f, 1.0f), vs, ps);
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT4(0.5f, 0.1f, 0.5f, 1.0f), vs, ps);
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT4(0.3f, 0.5f, 0.9f, 1.0f), vs, ps_uvs);
+	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT4(0.5f, 0.1f, 0.5f, 1.0f), vs, ps_normals);
+	std::shared_ptr<Material> mat4 = std::make_shared<Material>(XMFLOAT4(0.5f, 0.1f, 0.5f, 1.0f), vs, ps_custom);
 
 	meshes[0] = std::make_shared<Mesh>(FixPath("../../Assets/Models/sphere.obj").c_str(), "Sphere");
 	meshes[1] = std::make_shared<Mesh>(FixPath("../../Assets/Models/cube.obj").c_str(), "Cube");
@@ -120,8 +129,8 @@ void Game::CreateEntities()
 	scene[0] = std::make_shared<Entity>(meshes[0], mat1);
 	scene[1] = std::make_shared<Entity>(meshes[1], mat2);
 	scene[2] = std::make_shared<Entity>(meshes[2], mat3);
-	scene[3] = std::make_shared<Entity>(meshes[3], mat1);
-	scene[4] = std::make_shared<Entity>(meshes[4], mat2);
+	scene[3] = std::make_shared<Entity>(meshes[3], mat4);
+	scene[4] = std::make_shared<Entity>(meshes[4], mat4);
 }
 
 
