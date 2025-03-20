@@ -18,6 +18,8 @@
 #include "SimpleShader.h"
 #include "Material.h"
 
+#include "WICTextureLoader.h"
+
 // For the DirectX Math library
 using namespace DirectX;
 
@@ -114,12 +116,54 @@ void Game::CreateEntities()
 		Graphics::Device, Graphics::Context, FixPath(L"DebugNormalsPS.cso").c_str());
 	std::shared_ptr<SimplePixelShader> ps_custom = std::make_shared<SimplePixelShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"CustomPS.cso").c_str());
+	std::shared_ptr<SimplePixelShader> ps_decal = std::make_shared<SimplePixelShader>(
+		Graphics::Device, Graphics::Context, FixPath(L"DecalPS.cso").c_str());
 
-	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f), vs, ps);
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT4(0.3f, 0.5f, 0.9f, 1.0f), vs, ps_uvs);
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT4(0.5f, 0.1f, 0.5f, 1.0f), vs, ps_normals);
-	std::shared_ptr<Material> mat4 = std::make_shared<Material>(XMFLOAT4(0.5f, 0.1f, 0.5f, 1.0f), vs, ps_custom);
-	std::shared_ptr<Material> mat5 = std::make_shared<Material>(XMFLOAT4(0.0f, 0.9f, 0.5f, 1.0f), vs, ps);
+	// Load textures
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> grassSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> decalSRV;
+
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/grass.webp").c_str(), nullptr, grassSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/wood.jpg").c_str(), nullptr, woodSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/decal.jpg").c_str(), nullptr, decalSRV.GetAddressOf());
+
+	// Create Sampler State
+	D3D11_SAMPLER_DESC samplerDesc{};
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.MaxAnisotropy = 16;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> samplerState;
+	Graphics::Device->CreateSamplerState(&samplerDesc, samplerState.GetAddressOf());
+
+
+	// Create Materials
+	materials[0] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps);
+	materials[1] = std::make_shared<Material>(XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), vs, ps);
+	materials[2] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), vs, ps_decal);
+	materials[3] = std::make_shared<Material>(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), vs, ps_decal);
+	materials[4] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps);
+
+	materials[0]->AddSampler("BasicSampler", samplerState);
+	materials[0]->AddTextureSRV("SurfaceTexture", woodSRV);
+
+	materials[1]->AddSampler("BasicSampler", samplerState);
+	materials[1]->AddTextureSRV("SurfaceTexture", woodSRV);
+
+	materials[2]->AddSampler("BasicSampler", samplerState);
+	materials[2]->AddTextureSRV("SurfaceTexture", woodSRV);
+	materials[2]->AddTextureSRV("DecalTexture", decalSRV);
+
+	materials[3]->AddSampler("BasicSampler", samplerState);
+	materials[3]->AddTextureSRV("SurfaceTexture", grassSRV);
+	materials[3]->AddTextureSRV("DecalTexture", decalSRV);
+	
+	materials[4]->AddSampler("BasicSampler", samplerState);
+	materials[4]->AddTextureSRV("SurfaceTexture", grassSRV);
 
 	meshes[0] = std::make_shared<Mesh>(FixPath("../../Assets/Models/sphere.obj").c_str(), "Sphere");
 	meshes[1] = std::make_shared<Mesh>(FixPath("../../Assets/Models/cube.obj").c_str(), "Cube");
@@ -128,25 +172,25 @@ void Game::CreateEntities()
 	meshes[4] = std::make_shared<Mesh>(FixPath("../../Assets/Models/cylinder.obj").c_str(), "Cylinder");
 
 	// UV shader
-	scene[0] = std::make_shared<Entity>(meshes[0], mat2);
-	scene[1] = std::make_shared<Entity>(meshes[1], mat2);
-	scene[2] = std::make_shared<Entity>(meshes[2], mat2);
-	scene[3] = std::make_shared<Entity>(meshes[3], mat2);
-	scene[4] = std::make_shared<Entity>(meshes[4], mat2);
+	scene[0] = std::make_shared<Entity>(meshes[0], materials[1]);
+	scene[1] = std::make_shared<Entity>(meshes[1], materials[1]);
+	scene[2] = std::make_shared<Entity>(meshes[2], materials[1]);
+	scene[3] = std::make_shared<Entity>(meshes[3], materials[1]);
+	scene[4] = std::make_shared<Entity>(meshes[4], materials[1]);
 
 	// Normal shader
-	scene[5] = std::make_shared<Entity>(meshes[0], mat3);
-	scene[6] = std::make_shared<Entity>(meshes[1], mat3);
-	scene[7] = std::make_shared<Entity>(meshes[2], mat3);
-	scene[8] = std::make_shared<Entity>(meshes[3], mat3);
-	scene[9] = std::make_shared<Entity>(meshes[4], mat3);
+	scene[5] = std::make_shared<Entity>(meshes[0], materials[2]);
+	scene[6] = std::make_shared<Entity>(meshes[1], materials[2]);
+	scene[7] = std::make_shared<Entity>(meshes[2], materials[2]);
+	scene[8] = std::make_shared<Entity>(meshes[3], materials[2]);
+	scene[9] = std::make_shared<Entity>(meshes[4], materials[2]);
 
 	// Custom shader and colorTint shader
-	scene[10] = std::make_shared<Entity>(meshes[0], mat1);
-	scene[11] = std::make_shared<Entity>(meshes[1], mat5);
-	scene[12] = std::make_shared<Entity>(meshes[2], mat4);
-	scene[13] = std::make_shared<Entity>(meshes[3], mat4);
-	scene[14] = std::make_shared<Entity>(meshes[4], mat4);
+	scene[10] = std::make_shared<Entity>(meshes[0], materials[0]);
+	scene[11] = std::make_shared<Entity>(meshes[1], materials[4]);
+	scene[12] = std::make_shared<Entity>(meshes[2], materials[3]);
+	scene[13] = std::make_shared<Entity>(meshes[3], materials[3]);
+	scene[14] = std::make_shared<Entity>(meshes[4], materials[3]);
 }
 
 
@@ -355,6 +399,35 @@ void Game::BuildUI(float totalTime)
 				ImGui::DragFloat3(posHeader.c_str(), &entity->GetTransform()->m_position.x);
 				ImGui::DragFloat3(rotHeader.c_str(), &entity->GetTransform()->m_rotation.x);
 				ImGui::DragFloat3(scaleHeader.c_str(), & entity->GetTransform()->m_scale.x);
+			}
+
+			idx++;
+		}
+	}
+
+	// Material Info
+	if (ImGui::CollapsingHeader("Materials"))
+	{
+		uint32_t idx = 0;
+		ImVec2 imageSize(200, 200);
+
+		for (const std::shared_ptr<Material>& material : materials)
+		{
+			std::string header = "Material " + std::to_string(idx);
+			std::string colTintHeader = "Color tint##colTint" + std::to_string(idx);
+			std::string uvScaleHeader = "UV Scale##scale" + std::to_string(idx);
+			std::string uvOffsetHeader = "UV Offset##offset" + std::to_string(idx);
+
+			if (ImGui::CollapsingHeader(header.c_str()))
+			{
+				ImGui::DragFloat4(colTintHeader.c_str(), &material->m_colorTint.x, 0.01f);
+				ImGui::DragFloat2(uvScaleHeader.c_str(), &material->m_uvScale.x, 0.01f);
+				ImGui::DragFloat2(uvOffsetHeader.c_str(), &material->m_uvOffset.x, 0.01f);
+
+				for (const auto& t : material->m_textureSRVs)
+				{
+					ImGui::Image((ImTextureID)t.second.Get(), imageSize);
+				}
 			}
 
 			idx++;

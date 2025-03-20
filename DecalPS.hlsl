@@ -24,6 +24,7 @@ cbuffer ExternalData : register(b0)
 }
 
 Texture2D SurfaceTexture : register(t0);
+Texture2D DecalTexture : register(t1);
 SamplerState BasicSampler : register(s0);
 
 // --------------------------------------------------------
@@ -39,7 +40,9 @@ float4 main(VertexToPixel input) : SV_TARGET
 {
 	input.uv = input.uv * uvScale + uvOffset;
 	float4 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv);
-	float4 finalColor = surfaceColor * colorTint;
+	float4 decalColor = DecalTexture.Sample(BasicSampler, input.uv);
+
+	float4 finalColor = surfaceColor * decalColor * colorTint;
 
 	return finalColor;
 }
