@@ -110,12 +110,6 @@ void Game::CreateEntities()
 	// Pixel shaders
 	std::shared_ptr<SimplePixelShader> ps = std::make_shared<SimplePixelShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"PixelShader.cso").c_str());
-	std::shared_ptr<SimplePixelShader> ps_uvs = std::make_shared<SimplePixelShader>(
-		Graphics::Device, Graphics::Context, FixPath(L"DebugUVsPS.cso").c_str());
-	std::shared_ptr<SimplePixelShader> ps_normals = std::make_shared<SimplePixelShader>(
-		Graphics::Device, Graphics::Context, FixPath(L"DebugNormalsPS.cso").c_str());
-	std::shared_ptr<SimplePixelShader> ps_custom = std::make_shared<SimplePixelShader>(
-		Graphics::Device, Graphics::Context, FixPath(L"CustomPS.cso").c_str());
 	std::shared_ptr<SimplePixelShader> ps_decal = std::make_shared<SimplePixelShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"DecalPS.cso").c_str());
 
