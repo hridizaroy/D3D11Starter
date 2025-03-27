@@ -136,11 +136,11 @@ void Game::CreateEntities()
 
 
 	// Create Materials
-	materials[0] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps);
-	materials[1] = std::make_shared<Material>(XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), vs, ps);
-	materials[2] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), vs, ps_decal);
-	materials[3] = std::make_shared<Material>(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), vs, ps_decal);
-	materials[4] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps);
+	materials[0] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps, 0.5);
+	materials[1] = std::make_shared<Material>(XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), vs, ps, 1.0);
+	materials[2] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), vs, ps_decal, 0.0);
+	materials[3] = std::make_shared<Material>(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), vs, ps_decal, 0.2);
+	materials[4] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps, 0.8);
 
 	materials[0]->AddSampler("BasicSampler", samplerState);
 	materials[0]->AddTextureSRV("SurfaceTexture", woodSRV);

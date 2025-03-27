@@ -4,11 +4,13 @@ Material::Material(
 	const DirectX::XMFLOAT4 colorTint,
 	const std::shared_ptr<SimpleVertexShader> vertexShader,
 	const std::shared_ptr<SimplePixelShader> pixelShader,
+	const float roughness,
 	const DirectX::XMFLOAT2 uvScale,
 	const DirectX::XMFLOAT2 uvOffset) :
 	m_colorTint(colorTint),
 	m_vertexShader(vertexShader),
 	m_pixelShader(pixelShader),
+	m_roughness(roughness),
 	m_uvScale(uvScale),
 	m_uvOffset(uvOffset)
 {
@@ -51,6 +53,8 @@ void Material::AddSampler(const std::string shaderVarName, Microsoft::WRL::ComPt
 
 void Material::PrepareMaterial()
 {
+	m_pixelShader->SetFloat("roughness", m_roughness);
+
 	for (const auto& t : m_textureSRVs)
 	{
 		m_pixelShader->SetShaderResourceView(t.first.c_str(), t.second);

@@ -11,6 +11,7 @@ public:
 	// getters
 	DirectX::XMFLOAT4X4 GetViewMatrix();
 	DirectX::XMFLOAT4X4 GetProjectionMatrix();
+	std::shared_ptr<Transform> GetTransform();
 
 	// setters
 	void SetFOV(const float fov);

@@ -28,6 +28,11 @@ DirectX::XMFLOAT4X4 Camera::GetProjectionMatrix()
 	return m_projectionMatrix;
 }
 
+std::shared_ptr<Transform> Camera::GetTransform()
+{
+	return m_transform;
+}
+
 void Camera::SetFOV(const float fov)
 {
 	m_fov = fov;

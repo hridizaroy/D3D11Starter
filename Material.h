@@ -11,6 +11,7 @@ public:
 	Material(const DirectX::XMFLOAT4 colorTint,
 		const std::shared_ptr<SimpleVertexShader> vertexShader,
 		const std::shared_ptr<SimplePixelShader> pixelShader,
+		const float roughness,
 		const DirectX::XMFLOAT2 uvScale = DirectX::XMFLOAT2(1.0, 1.0),
 		const DirectX::XMFLOAT2 uvOffset = DirectX::XMFLOAT2(0.0, 0.0));
 
@@ -33,6 +34,8 @@ private:
 	DirectX::XMFLOAT4 m_colorTint;
 	DirectX::XMFLOAT2 m_uvScale;
 	DirectX::XMFLOAT2 m_uvOffset;
+
+	float m_roughness;
 
 	std::shared_ptr<SimpleVertexShader> m_vertexShader;
 	std::shared_ptr<SimplePixelShader> m_pixelShader;
