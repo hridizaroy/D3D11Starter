@@ -9,6 +9,7 @@
 
 #include "Entity.h"
 #include "Camera.h"
+#include "Lights.h"
 
 class Game
 {
@@ -45,6 +46,8 @@ private:
 	std::shared_ptr<Entity> scene[15];
 	std::shared_ptr<Material> materials[5];
 	std::vector<std::shared_ptr<Camera>> cameras;
+	DirectX::XMFLOAT3 ambientColor;
+	std::vector<Light> lights;
 
 	int activeCameraIdx;
 

@@ -54,6 +54,40 @@ void Game::Initialize()
 	cameras[1]->SetFOV(XM_PIDIV2); // 90 degrees
 	cameras[2]->SetFOV(XM_PI / 3.0f); // 60 degrees
 
+	ambientColor = DirectX::XMFLOAT3(0.0f, 0.1f, 0.25f);
+
+	lights.resize(5);
+
+	lights[0].Type = LIGHT_TYPE_DIRECTIONAL;
+	lights[0].Direction = XMFLOAT3(1.0, 0.0, 0.0);
+	lights[0].Color = XMFLOAT3(0.2f, 1.0f, 0.2f);
+	lights[0].Intensity = 1.0f;
+
+	lights[1].Type = LIGHT_TYPE_SPOT;
+	lights[1].Position = XMFLOAT3(-1.0, 0.0, -0.5);
+	lights[1].Direction = XMFLOAT3(0.0, 0.0, 1.0);
+	lights[1].Color = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	lights[1].Intensity = 1.0f;
+	lights[1].Range = 10.0;
+	lights[1].SpotInnerAngle = XM_PI / 10.0;
+	lights[1].SpotOuterAngle = XM_PI / 5.0;
+
+	lights[2].Type = LIGHT_TYPE_POINT;
+	lights[2].Position = XMFLOAT3(3.0, 0.0, -20.0);
+	lights[2].Color = XMFLOAT3(1.0f, 0.0f, 0.2f);
+	lights[2].Intensity = 1.0f;
+	lights[2].Range = 40.0;
+
+	lights[3].Type = LIGHT_TYPE_DIRECTIONAL;
+	lights[3].Direction = XMFLOAT3(1.0, 1.0, 0.0);
+	lights[3].Color = XMFLOAT3(0.2f, 1.0f, 1.0f);
+	lights[3].Intensity = 1.0f;
+
+	lights[4].Type = LIGHT_TYPE_DIRECTIONAL;
+	lights[4].Direction = XMFLOAT3(-1.0, -1.0, 0.0);
+	lights[4].Color = XMFLOAT3(1.0f, 0.0f, 0.2f);
+	lights[4].Intensity = 1.0f;
+
 	activeCameraIdx = 0;
 
 
@@ -136,11 +170,11 @@ void Game::CreateEntities()
 
 
 	// Create Materials
-	materials[0] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps, 0.5);
-	materials[1] = std::make_shared<Material>(XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), vs, ps, 1.0);
-	materials[2] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), vs, ps_decal, 0.0);
-	materials[3] = std::make_shared<Material>(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), vs, ps_decal, 0.2);
-	materials[4] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps, 0.8);
+	materials[0] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps, 0.0f);
+	materials[1] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps, 1.0f);
+	materials[2] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), vs, ps_decal, 0.0f);
+	materials[3] = std::make_shared<Material>(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), vs, ps_decal, 0.0f);
+	materials[4] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps, 0.5f);
 
 	materials[0]->AddSampler("BasicSampler", samplerState);
 	materials[0]->AddTextureSRV("SurfaceTexture", woodSRV);
@@ -173,18 +207,18 @@ void Game::CreateEntities()
 	scene[4] = std::make_shared<Entity>(meshes[4], materials[1]);
 
 	// Normal shader
-	scene[5] = std::make_shared<Entity>(meshes[0], materials[2]);
-	scene[6] = std::make_shared<Entity>(meshes[1], materials[2]);
-	scene[7] = std::make_shared<Entity>(meshes[2], materials[2]);
-	scene[8] = std::make_shared<Entity>(meshes[3], materials[2]);
-	scene[9] = std::make_shared<Entity>(meshes[4], materials[2]);
+	scene[5] = std::make_shared<Entity>(meshes[0], materials[0]);
+	scene[6] = std::make_shared<Entity>(meshes[1], materials[0]);
+	scene[7] = std::make_shared<Entity>(meshes[2], materials[0]);
+	scene[8] = std::make_shared<Entity>(meshes[3], materials[0]);
+	scene[9] = std::make_shared<Entity>(meshes[4], materials[0]);
 
 	// Custom shader and colorTint shader
-	scene[10] = std::make_shared<Entity>(meshes[0], materials[0]);
+	scene[10] = std::make_shared<Entity>(meshes[0], materials[4]);
 	scene[11] = std::make_shared<Entity>(meshes[1], materials[4]);
-	scene[12] = std::make_shared<Entity>(meshes[2], materials[3]);
-	scene[13] = std::make_shared<Entity>(meshes[3], materials[3]);
-	scene[14] = std::make_shared<Entity>(meshes[4], materials[3]);
+	scene[12] = std::make_shared<Entity>(meshes[2], materials[4]);
+	scene[13] = std::make_shared<Entity>(meshes[3], materials[4]);
+	scene[14] = std::make_shared<Entity>(meshes[4], materials[4]);
 }
 
 
@@ -345,6 +379,18 @@ void Game::BuildUI(float totalTime)
 
 	ImGui::Combo("Select Camera", &activeCameraIdx, cameraOptionPtrs.data(), static_cast<int>(numCameras));
 
+	// Light
+	if (ImGui::CollapsingHeader("Light Data"))
+	{
+		ImGui::ColorEdit3("Ambient Color", &ambientColor.x);
+
+		for (size_t ii = 0; ii < lights.size(); ii++)
+		{
+			std::string header = "Light " + std::to_string(ii) + " color";
+			ImGui::ColorEdit3(header.c_str(), &lights[ii].Color.x);
+		}
+	}
+
 	// Active camera info
 	if (ImGui::CollapsingHeader("Camera Data"))
 	{
@@ -450,6 +496,12 @@ void Game::Draw(float deltaTime, float totalTime)
 	{
 		for (const std::shared_ptr<Entity>& entity : scene)
 		{
+			std::shared_ptr<SimplePixelShader> ps = entity->GetMaterial()->GetPixelShader();
+
+			ps->SetData("lights", &lights[0], sizeof(Light) * (int)lights.size());
+			ps->SetInt("numLights", (int)lights.size());
+
+			ps->SetFloat3("ambient", ambientColor);
 			entity->Draw(cameras[activeCameraIdx]);
 		}
 	}
