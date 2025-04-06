@@ -138,23 +138,37 @@ Game::~Game()
 void Game::CreateEntities()
 {
 	// Load shaders
+
+	// Vertex Shaders
 	std::shared_ptr<SimpleVertexShader> vs = std::make_shared<SimpleVertexShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"VertexShader.cso").c_str());
+	std::shared_ptr<SimpleVertexShader> skyVS = std::make_shared<SimpleVertexShader>(
+		Graphics::Device, Graphics::Context, FixPath(L"SkyVertexShader.cso").c_str());
 
-	// Pixel shaders
+	// Pixel Shaders
 	std::shared_ptr<SimplePixelShader> ps = std::make_shared<SimplePixelShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"PixelShader.cso").c_str());
-	std::shared_ptr<SimplePixelShader> ps_decal = std::make_shared<SimplePixelShader>(
-		Graphics::Device, Graphics::Context, FixPath(L"DecalPS.cso").c_str());
+	std::shared_ptr<SimplePixelShader> skyPS = std::make_shared<SimplePixelShader>(
+		Graphics::Device, Graphics::Context, FixPath(L"SkyPixelShader.cso").c_str());
 
 	// Load textures
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> grassSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> decalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneNormalsSRV;
 
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/grass.webp").c_str(), nullptr, grassSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/wood.jpg").c_str(), nullptr, woodSRV.GetAddressOf());
-	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/decal.jpg").c_str(), nullptr, decalSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionNormalsSRV;
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormalsSRV;
+
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/cobblestone.png").c_str(), nullptr, cobblestoneSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/cobblestone_normals.png").c_str(), nullptr, cobblestoneNormalsSRV.GetAddressOf());
+
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/cushion.png").c_str(), nullptr, cushionSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/cushion_normals.png").c_str(), nullptr, cushionNormalsSRV.GetAddressOf());
+	
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/rock.png").c_str(), nullptr, rockSRV.GetAddressOf());
+	CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(), FixPath(L"../../Assets/Textures/rock_normals.png").c_str(), nullptr, rockNormalsSRV.GetAddressOf());
 
 	// Create Sampler State
 	D3D11_SAMPLER_DESC samplerDesc{};
@@ -172,26 +186,19 @@ void Game::CreateEntities()
 	// Create Materials
 	materials[0] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps, 0.0f);
 	materials[1] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps, 1.0f);
-	materials[2] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), vs, ps_decal, 0.0f);
-	materials[3] = std::make_shared<Material>(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), vs, ps_decal, 0.0f);
-	materials[4] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps, 0.5f);
+	materials[2] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vs, ps, 0.0f);
 
 	materials[0]->AddSampler("BasicSampler", samplerState);
-	materials[0]->AddTextureSRV("SurfaceTexture", woodSRV);
+	materials[0]->AddTextureSRV("SurfaceTexture", cobblestoneSRV);
+	materials[0]->AddTextureSRV("NormalMap", cobblestoneNormalsSRV);
 
 	materials[1]->AddSampler("BasicSampler", samplerState);
-	materials[1]->AddTextureSRV("SurfaceTexture", woodSRV);
-
-	materials[2]->AddSampler("BasicSampler", samplerState);
-	materials[2]->AddTextureSRV("SurfaceTexture", woodSRV);
-	materials[2]->AddTextureSRV("DecalTexture", decalSRV);
-
-	materials[3]->AddSampler("BasicSampler", samplerState);
-	materials[3]->AddTextureSRV("SurfaceTexture", grassSRV);
-	materials[3]->AddTextureSRV("DecalTexture", decalSRV);
+	materials[1]->AddTextureSRV("SurfaceTexture", cushionSRV);
+	materials[1]->AddTextureSRV("NormalMap", cushionNormalsSRV);
 	
-	materials[4]->AddSampler("BasicSampler", samplerState);
-	materials[4]->AddTextureSRV("SurfaceTexture", grassSRV);
+	materials[2]->AddSampler("BasicSampler", samplerState);
+	materials[2]->AddTextureSRV("SurfaceTexture", rockSRV);
+	materials[2]->AddTextureSRV("NormalMap", rockNormalsSRV);
 
 	meshes[0] = std::make_shared<Mesh>(FixPath("../../Assets/Models/sphere.obj").c_str(), "Sphere");
 	meshes[1] = std::make_shared<Mesh>(FixPath("../../Assets/Models/cube.obj").c_str(), "Cube");
@@ -199,26 +206,36 @@ void Game::CreateEntities()
 	meshes[3] = std::make_shared<Mesh>(FixPath("../../Assets/Models/helix.obj").c_str(), "Helix");
 	meshes[4] = std::make_shared<Mesh>(FixPath("../../Assets/Models/cylinder.obj").c_str(), "Cylinder");
 
-	// UV shader
 	scene[0] = std::make_shared<Entity>(meshes[0], materials[1]);
 	scene[1] = std::make_shared<Entity>(meshes[1], materials[1]);
 	scene[2] = std::make_shared<Entity>(meshes[2], materials[1]);
 	scene[3] = std::make_shared<Entity>(meshes[3], materials[1]);
 	scene[4] = std::make_shared<Entity>(meshes[4], materials[1]);
 
-	// Normal shader
 	scene[5] = std::make_shared<Entity>(meshes[0], materials[0]);
 	scene[6] = std::make_shared<Entity>(meshes[1], materials[0]);
 	scene[7] = std::make_shared<Entity>(meshes[2], materials[0]);
 	scene[8] = std::make_shared<Entity>(meshes[3], materials[0]);
 	scene[9] = std::make_shared<Entity>(meshes[4], materials[0]);
 
-	// Custom shader and colorTint shader
-	scene[10] = std::make_shared<Entity>(meshes[0], materials[4]);
-	scene[11] = std::make_shared<Entity>(meshes[1], materials[4]);
-	scene[12] = std::make_shared<Entity>(meshes[2], materials[4]);
-	scene[13] = std::make_shared<Entity>(meshes[3], materials[4]);
-	scene[14] = std::make_shared<Entity>(meshes[4], materials[4]);
+	scene[10] = std::make_shared<Entity>(meshes[0], materials[2]);
+	scene[11] = std::make_shared<Entity>(meshes[1], materials[2]);
+	scene[12] = std::make_shared<Entity>(meshes[2], materials[2]);
+	scene[13] = std::make_shared<Entity>(meshes[3], materials[2]);
+	scene[14] = std::make_shared<Entity>(meshes[4], materials[2]);
+
+	// Create sky
+	sky = std::make_shared<Sky>(
+		meshes[1],
+		samplerState,
+		FixPath(L"../../Assets/Textures/CubeMaps/Clouds_Blue/right.png").c_str(),
+		FixPath(L"../../Assets/Textures/CubeMaps/Clouds_Blue/left.png").c_str(),
+		FixPath(L"../../Assets/Textures/CubeMaps/Clouds_Blue/up.png").c_str(),
+		FixPath(L"../../Assets/Textures/CubeMaps/Clouds_Blue/down.png").c_str(),
+		FixPath(L"../../Assets/Textures/CubeMaps/Clouds_Blue/front.png").c_str(),
+		FixPath(L"../../Assets/Textures/CubeMaps/Clouds_Blue/back.png").c_str(),
+		skyPS,
+		skyVS);
 }
 
 
@@ -504,6 +521,11 @@ void Game::Draw(float deltaTime, float totalTime)
 			ps->SetFloat3("ambient", ambientColor);
 			entity->Draw(cameras[activeCameraIdx]);
 		}
+	}
+
+	// Draw Sky
+	{
+		sky->Draw(cameras[activeCameraIdx]);
 	}
 
 	ImGui::Render(); // Turns this frame’s UI into renderable triangles

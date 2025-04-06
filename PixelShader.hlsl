@@ -18,6 +18,7 @@ cbuffer ExternalData : register(b0)
 }
 
 Texture2D SurfaceTexture : register(t0);
+Texture2D NormalMap : register(t1);
 SamplerState BasicSampler : register(s0);
 
 // Provided function for attenuation
@@ -62,6 +63,8 @@ float3 calculateLightContributions(float3 worldPos, float3 normal)
 			spec = pow(saturate(dot(R, V)), specExponent);
 		}
 
+		spec *= any(diffuse);
+
 		float3 specular = lights[ii].Color * spec;
 
 		float3 contribution = (diffuse + specular);
@@ -105,9 +108,22 @@ float3 calculateLightContributions(float3 worldPos, float3 normal)
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+	float3 unpackedNormal = NormalMap.Sample(BasicSampler, input.uv).rgb * 2.0 - 1.0;
+	unpackedNormal = normalize(unpackedNormal);
+
 	input.normal = normalize(input.normal);
+	input.tangent = normalize(input.tangent);
 	input.uv = input.uv * uvScale + uvOffset;
 	float4 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv) * colorTint;
+
+	// Gram-Schmidt orthonormalize process
+	float3 N = input.normal;
+	float3 T = input.tangent;
+	T = normalize(T - N * dot(T, N));
+	float3 B = cross(T, N);
+	float3x3 TBN = float3x3(T, B, N);
+
+	input.normal = mul(unpackedNormal, TBN);
 
 	float4 finalColor = float4(ambient, 1.0);
 

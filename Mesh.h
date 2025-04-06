@@ -35,4 +35,7 @@ private:
 
 	void Initialize(Vertex* vertices, unsigned int numVertices,
 		unsigned int* indices, unsigned int numIndices, std::string name);
+
+	void CalculateTangents(Vertex* verts, int numVerts,
+		unsigned int* indices, int numIndices);
 };

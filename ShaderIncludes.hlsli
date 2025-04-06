@@ -11,6 +11,7 @@ struct VertexShaderInput
     float3 localPosition : POSITION; // XYZ position
     float2 uv : TEXCOORD;
     float3 normal : NORMAL;
+    float3 tangent : TANGENT;
 };
 
 struct VertexToPixel
@@ -19,6 +20,13 @@ struct VertexToPixel
     float2 uv : TEXCOORD;
     float3 normal : NORMAL;
     float3 worldPosition : POSITION;
+    float3 tangent : TANGENT;
+};
+
+struct VertexToPixel_Sky
+{
+    float4 position : SV_POSITION;
+    float3 sampleDir : DIRECTION;
 };
 
 struct Light
