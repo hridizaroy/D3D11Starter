@@ -45,9 +45,8 @@ private:
 	// Scene
 	std::shared_ptr<Mesh> meshes[5];
 	std::shared_ptr<Entity> scene[15];
-	std::shared_ptr<Material> materials[5];
+	std::shared_ptr<Material> materials[3];
 	std::vector<std::shared_ptr<Camera>> cameras;
-	DirectX::XMFLOAT3 ambientColor;
 	std::vector<Light> lights;
 	std::shared_ptr<Sky> sky;
 

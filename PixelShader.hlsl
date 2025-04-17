@@ -11,14 +11,15 @@ cbuffer ExternalData : register(b0)
 	float roughness;
 	float3 camPos;
 
-	float3 ambient;
-
 	Light lights[MAX_LIGHTS];
 	int numLights;
 }
 
-Texture2D SurfaceTexture : register(t0);
+Texture2D Albedo : register(t0);
 Texture2D NormalMap : register(t1);
+Texture2D RoughnessMap : register(t2);
+Texture2D MetalnessMap : register(t3);
+
 SamplerState BasicSampler : register(s0);
 
 // Provided function for attenuation
@@ -29,7 +30,8 @@ float Attenuate(Light light, float3 worldPos)
 	return att * att;
 }
 
-float3 calculateLightContributions(float3 worldPos, float3 normal)
+float3 calculateLightContributions(float3 worldPos, float3 normal,
+	float roughness, float metalness, float3 specColor, float3 surfaceColor)
 {
 	float3 totalContribution = float3(0.0, 0.0, 0.0);
 
@@ -46,28 +48,13 @@ float3 calculateLightContributions(float3 worldPos, float3 normal)
 		{
 			incomingLightDir = normalize(worldPos - lights[ii].Position);
 		}
-
-		float3 diffuse =
-			lights[ii].Intensity *
-			saturate(dot(-incomingLightDir, normal)) *
-			lights[ii].Color;
-
-		// Specular
-		float spec = 0.0f;
-		float specExponent = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
-
-		if (specExponent > 0.05)
-		{
-			float3 V = normalize(camPos - worldPos);
-			float3 R = reflect(incomingLightDir, normal);
-			spec = pow(saturate(dot(R, V)), specExponent);
-		}
-
-		spec *= any(diffuse);
-
-		float3 specular = lights[ii].Color * spec;
-
-		float3 contribution = (diffuse + specular);
+		
+		float diff = DiffusePBR(normal, -incomingLightDir);
+		float3 toCam = normalize(camPos - worldPos);
+		float3 F;
+		float3 spec = MicrofacetBRDF(normal, -incomingLightDir, toCam, roughness, specColor, F);
+		float3 balancedDiff = DiffuseEnergyConserve(diff, F, metalness);
+		float3 contribution = (balancedDiff * surfaceColor + spec) * lights[ii].Intensity * lights[ii].Color;
 
 		if (lights[ii].Type != LIGHT_TYPE_DIRECTIONAL)
 		{
@@ -114,7 +101,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 	input.normal = normalize(input.normal);
 	input.tangent = normalize(input.tangent);
 	input.uv = input.uv * uvScale + uvOffset;
-	float4 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv) * colorTint;
+	float3 surfaceColor = (pow(Albedo.Sample(BasicSampler, input.uv), 2.2f) * colorTint).rgb;
 
 	// Gram-Schmidt orthonormalize process
 	float3 N = input.normal;
@@ -125,12 +112,17 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 	input.normal = mul(unpackedNormal, TBN);
 
-	float4 finalColor = float4(ambient, 1.0);
+	float roughness = RoughnessMap.Sample(BasicSampler, input.uv).r;
+	float metalness = MetalnessMap.Sample(BasicSampler, input.uv).r;
 
-	float3 lightContributions = calculateLightContributions(input.worldPosition, input.normal);
-	finalColor += float4(lightContributions, 1.0);
+	// Specular color determination -----------------
+	// Assume albedo texture is actually holding specular color where metalness == 1
+	// Note the use of lerp here - metal is generally 0 or 1, but might be in between
+	// because of linear texture sampling, so we lerp the specular color to match
+	float3 specColor = lerp(F0_NON_METAL, surfaceColor.rgb, metalness);
 
-	finalColor *= surfaceColor;
+	float3 lightContributions = calculateLightContributions(
+		input.worldPosition, input.normal, roughness, metalness, specColor, surfaceColor);
 
-	return finalColor;
+	return float4(pow(lightContributions, 1.0f/2.2f), 1.0f);
 }
