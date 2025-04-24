@@ -19,8 +19,10 @@ Texture2D Albedo : register(t0);
 Texture2D NormalMap : register(t1);
 Texture2D RoughnessMap : register(t2);
 Texture2D MetalnessMap : register(t3);
+Texture2D ShadowMap : register(t4);
 
 SamplerState BasicSampler : register(s0);
+SamplerComparisonState ShadowSampler : register(s1);
 
 // Provided function for attenuation
 float Attenuate(Light light, float3 worldPos)
@@ -31,7 +33,8 @@ float Attenuate(Light light, float3 worldPos)
 }
 
 float3 calculateLightContributions(float3 worldPos, float3 normal,
-	float roughness, float metalness, float3 specColor, float3 surfaceColor)
+	float roughness, float metalness, float3 specColor, float3 surfaceColor,
+	float shadowAmount)
 {
 	float3 totalContribution = float3(0.0, 0.0, 0.0);
 
@@ -78,6 +81,12 @@ float3 calculateLightContributions(float3 worldPos, float3 normal,
 			}
 		}
 
+		// If this is the first light, apply the shadowing result
+		if (ii == 4)
+		{
+			contribution *= shadowAmount;
+		}
+
 		totalContribution += contribution;
 	}
 
@@ -95,6 +104,17 @@ float3 calculateLightContributions(float3 worldPos, float3 normal,
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+	input.shadowMapPos /= input.shadowMapPos.w;
+	float2 shadowUV = input.shadowMapPos.xy * 0.5f + 0.5f;
+	shadowUV.y = 1 - shadowUV.y;
+	float distToLight = input.shadowMapPos.z;
+
+	// Get a ratio of comparison results using SampleCmpLevelZero()
+	float shadowAmount = ShadowMap.SampleCmpLevelZero(
+		ShadowSampler,
+		shadowUV,
+		distToLight).r;
+	
 	float3 unpackedNormal = NormalMap.Sample(BasicSampler, input.uv).rgb * 2.0 - 1.0;
 	unpackedNormal = normalize(unpackedNormal);
 
@@ -122,7 +142,8 @@ float4 main(VertexToPixel input) : SV_TARGET
 	float3 specColor = lerp(F0_NON_METAL, surfaceColor.rgb, metalness);
 
 	float3 lightContributions = calculateLightContributions(
-		input.worldPosition, input.normal, roughness, metalness, specColor, surfaceColor);
+		input.worldPosition, input.normal, roughness, metalness, specColor, surfaceColor,
+		shadowAmount);
 
 	return float4(pow(lightContributions, 1.0f/2.2f), 1.0f);
 }

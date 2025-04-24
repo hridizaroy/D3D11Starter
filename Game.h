@@ -35,6 +35,11 @@ private:
 	void UpdateImGui(float deltaTime);
 	void BuildUI(float totalTime);
 
+	// Shadow Map helper functions
+	void CreateShadowMapSetup();
+	void UpdateLightMatrices();
+	void PopulateShadowMap();
+
 	// ImGui UI related variables
 	size_t numSecs;
 	size_t fps;
@@ -44,13 +49,22 @@ private:
 
 	// Scene
 	std::shared_ptr<Mesh> meshes[5];
-	std::shared_ptr<Entity> scene[15];
-	std::shared_ptr<Material> materials[3];
+	std::shared_ptr<Entity> scene[16];
+	std::shared_ptr<Material> materials[4];
 	std::vector<std::shared_ptr<Camera>> cameras;
 	std::vector<Light> lights;
 	std::shared_ptr<Sky> sky;
 
 	int activeCameraIdx;
 
+	// Shadow Map
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> shadowDSV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
+	DirectX::XMFLOAT4X4 lightViewMatrix;
+	DirectX::XMFLOAT4X4 lightProjectionMatrix;
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> shadowRasterizer;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
+
+	std::shared_ptr<SimpleVertexShader> shadowMapVS;
 };
 
