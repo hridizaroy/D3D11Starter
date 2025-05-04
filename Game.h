@@ -40,6 +40,9 @@ private:
 	void UpdateLightMatrices();
 	void PopulateShadowMap();
 
+	// Post Process helper functions
+	void CreatePostProcessSetup();
+
 	// ImGui UI related variables
 	size_t numSecs;
 	size_t fps;
@@ -66,5 +69,22 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
 
 	std::shared_ptr<SimpleVertexShader> shadowMapVS;
+
+	// Post Process
+	
+	// Resources that are shared among all post processes
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> ppSampler;
+	std::shared_ptr<SimpleVertexShader> ppVS;
+
+	// Resources that are tied to a particular post process
+	std::shared_ptr<SimplePixelShader> blurPS;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> blurRTV; // For rendering
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> blurSRV; // For sampling
+
+	std::shared_ptr<SimplePixelShader> caPS;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> caRTV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> caSRV;
+
+	int blurRadius;
 };
 

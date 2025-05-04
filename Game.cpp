@@ -34,6 +34,7 @@ void Game::Initialize()
 	//  - You'll be expanding and/or replacing these later
 	CreateEntities();
 	CreateShadowMapSetup();
+	CreatePostProcessSetup();
 
 	// Set initial graphics API state
 	//  - These settings persist until we change them
@@ -105,6 +106,8 @@ void Game::Initialize()
 	backgroundColor[3] = 0.0f;
 	darkModeEnabled = true;
 
+	blurRadius = 5;
+
 	if (!darkModeEnabled)
 	{
 		ImGui::StyleColorsLight();
@@ -145,12 +148,18 @@ void Game::CreateEntities()
 		Graphics::Device, Graphics::Context, FixPath(L"SkyVertexShader.cso").c_str());
 	shadowMapVS = std::make_shared<SimpleVertexShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"ShadowMapVS.cso").c_str());
+	ppVS = std::make_shared<SimpleVertexShader>(
+		Graphics::Device, Graphics::Context, FixPath(L"PostProcessVS.cso").c_str());
 
 	// Pixel Shaders
 	std::shared_ptr<SimplePixelShader> ps = std::make_shared<SimplePixelShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"PixelShader.cso").c_str());
 	std::shared_ptr<SimplePixelShader> skyPS = std::make_shared<SimplePixelShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"SkyPixelShader.cso").c_str());
+	blurPS = std::make_shared<SimplePixelShader>(
+		Graphics::Device, Graphics::Context, FixPath(L"PostProcessPS.cso").c_str());
+	caPS = std::make_shared<SimplePixelShader>(
+		Graphics::Device, Graphics::Context, FixPath(L"chromaticAberPS.cso").c_str());
 
 	// Load textures
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneAlbedoSRV;
@@ -400,10 +409,74 @@ void Game::PopulateShadowMap()
 	Graphics::Context->RSSetState(0);
 }
 
+void Game::CreatePostProcessSetup()
+{
+	// Reset ComPtrs
+	blurSRV.Reset();
+	blurRTV.Reset();
+	caSRV.Reset();
+	caRTV.Reset();
+
+	// Sampler state for post processing
+	D3D11_SAMPLER_DESC ppSampDesc = {};
+	ppSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	ppSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	Graphics::Device->CreateSamplerState(&ppSampDesc, ppSampler.GetAddressOf());
+
+	// Describe the texture we're creating
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = Window::Width();
+	textureDesc.Height = Window::Height();
+	textureDesc.ArraySize = 1;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.MipLevels = 1;
+	textureDesc.MiscFlags = 0;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> blurTexture;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> caTexture;
+	Graphics::Device->CreateTexture2D(&textureDesc, 0, blurTexture.GetAddressOf());
+	Graphics::Device->CreateTexture2D(&textureDesc, 0, caTexture.GetAddressOf());
+
+	// Create the Render Target View
+	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+	rtvDesc.Format = textureDesc.Format;
+	rtvDesc.Texture2D.MipSlice = 0;
+	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	Graphics::Device->CreateRenderTargetView(
+		blurTexture.Get(),
+		&rtvDesc,
+		blurRTV.ReleaseAndGetAddressOf());
+
+	Graphics::Device->CreateRenderTargetView(
+		caTexture.Get(),
+		&rtvDesc,
+		caRTV.ReleaseAndGetAddressOf());
+
+	// Create the Shader Resource View
+	// By passing it a null description for the SRV, we
+	// get a "default" SRV that has access to the entire resource
+	Graphics::Device->CreateShaderResourceView(
+		blurTexture.Get(),
+		0,
+		blurSRV.ReleaseAndGetAddressOf());
+	Graphics::Device->CreateShaderResourceView(
+		caTexture.Get(),
+		0,
+		caSRV.ReleaseAndGetAddressOf());
+}
+
 
 // --------------------------------------------------------
 // Handle resizing to match the new window size
-//  - Eventually, we'll want to update our 3D camera
 // --------------------------------------------------------
 void Game::OnResize()
 {
@@ -414,6 +487,11 @@ void Game::OnResize()
 			camera->UpdateProjectionMatrix(Window::AspectRatio());
 		}
 	}
+
+	if (Graphics::Device.Get())
+	{
+		CreatePostProcessSetup();
+	}	
 }
 
 
@@ -563,6 +641,8 @@ void Game::BuildUI(float totalTime)
 
 	ImGui::Combo("Select Camera", &activeCameraIdx, cameraOptionPtrs.data(), static_cast<int>(numCameras));
 
+	ImGui::DragInt("Blur Radius", &blurRadius, 1.0f, 0, 25);
+
 	// Light
 	if (ImGui::CollapsingHeader("Light Data"))
 	{
@@ -674,8 +754,12 @@ void Game::Draw(float deltaTime, float totalTime)
 		// Clear the back buffer (erase what's on screen) and depth buffer
 		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	backgroundColor);
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		Graphics::Context->ClearRenderTargetView(blurRTV.Get(), backgroundColor);
+		Graphics::Context->ClearRenderTargetView(caRTV.Get(), backgroundColor);
 
 		PopulateShadowMap();
+
+		Graphics::Context->OMSetRenderTargets(1, blurRTV.GetAddressOf(), Graphics::DepthBufferDSV.Get());
 	}
 
 	// DRAW geometry
@@ -703,9 +787,44 @@ void Game::Draw(float deltaTime, float totalTime)
 		sky->Draw(cameras[activeCameraIdx]);
 	}
 
-	ImGui::Render(); // Turns this frame’s UI into renderable triangles
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Draws it to the screen
+	// Post Processing - Blur
+	{
+		Graphics::Context->OMSetRenderTargets(1, caRTV.GetAddressOf(), 0);
 
+		ppVS->SetShader();
+		blurPS->SetShader();
+
+		blurPS->SetShaderResourceView("Pixels", blurSRV.Get());
+		blurPS->SetSamplerState("ClampSampler", ppSampler.Get());
+
+		// Activate shaders and bind resources
+		blurPS->SetInt("blurRadius", blurRadius);
+		blurPS->SetFloat("pixelWidth", 1.0f / Window::Width());
+		blurPS->SetFloat("pixelHeight", 1.0f / Window::Height());
+
+		blurPS->CopyAllBufferData();
+
+		Graphics::Context->Draw(3, 0);
+	}
+
+	// Post Processing - Chromatic Aberration
+	{
+		Graphics::Context->OMSetRenderTargets(1, Graphics::BackBufferRTV.GetAddressOf(), 0);
+		caPS->SetShader();
+
+		caPS->SetShaderResourceView("Pixels", caSRV.Get());
+		caPS->SetSamplerState("ClampSampler", ppSampler.Get());
+
+		caPS->CopyAllBufferData();
+
+		Graphics::Context->Draw(3, 0);
+	}
+
+	{
+		ImGui::Render(); // Turns this frame’s UI into renderable triangles
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // Draws it to the screen
+	}
+	
 	// Frame END
 	// - These should happen exactly ONCE PER FRAME
 	// - At the very end of the frame (after drawing *everything*)
