@@ -157,7 +157,7 @@ void Game::CreateEntities()
 	std::shared_ptr<SimplePixelShader> skyPS = std::make_shared<SimplePixelShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"SkyPixelShader.cso").c_str());
 	blurPS = std::make_shared<SimplePixelShader>(
-		Graphics::Device, Graphics::Context, FixPath(L"PostProcessPS.cso").c_str());
+		Graphics::Device, Graphics::Context, FixPath(L"blurPS.cso").c_str());
 	caPS = std::make_shared<SimplePixelShader>(
 		Graphics::Device, Graphics::Context, FixPath(L"chromaticAberPS.cso").c_str());
 
